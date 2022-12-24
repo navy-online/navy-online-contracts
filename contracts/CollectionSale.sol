@@ -13,18 +13,22 @@ contract CollectionSale is Ownable {
         WHITELIST,
         PUBLIC
     }
-    MintState mintState = MintState.DISABLED; // 0, 1, 2
+    MintState public mintState = MintState.DISABLED; // 0, 1, 2
 
     uint256 public tokensTotal;
     uint256 public mintPrice;
+    address public contractAddress;
 
-    // TODO add token type
+    event GenerateToken(address owner, address contractAddress);
 
-    event GenerateToken(address owner);
-
-    constructor(uint256 _tokensTotal, uint256 _mintPrice) {
+    constructor(
+        uint256 _tokensTotal,
+        uint256 _mintPrice,
+        address _contractAddress
+    ) {
         tokensTotal = _tokensTotal;
         mintPrice = _mintPrice;
+        contractAddress = _contractAddress;
     }
 
     function changeSaleState(MintState _mintState) external onlyOwner {
@@ -64,13 +68,14 @@ contract CollectionSale is Ownable {
     // ---------------------------------------
 
     function mint() external payable {
+        require(msg.value == mintPrice, "Wrong mint price");
         require(mintState != MintState.DISABLED, "Mint is disabled for now");
         require(tokensTotal > 0, "No more tokens for sale");
-        require(address(msg.sender).balance >= mintPrice, "Insufficient funds");
+        // require(address(msg.sender).balance >= mintPrice, "Insufficient funds");
         if (mintState == MintState.WHITELIST) {
             require(whitelist[msg.sender], "You need to be whitelisted");
         }
         tokensTotal -= 1;
-        emit GenerateToken(msg.sender);
+        emit GenerateToken(msg.sender, contractAddress);
     }
 }

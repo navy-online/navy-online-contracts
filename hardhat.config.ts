@@ -4,6 +4,7 @@ dotenv.config();
 import { HardhatUserConfig } from "hardhat/config";
 import { task } from "hardhat/config";
 import "@nomiclabs/hardhat-waffle";
+import "@nomicfoundation/hardhat-chai-matchers";
 
 const GanachePrivateKey = <string>process.env.GANACHE_PRIVATE_KEY;
 const MainnetPrivateKey = <string>process.env.MAINNET_PRIVATE_KEY;

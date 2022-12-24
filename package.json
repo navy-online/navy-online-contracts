@@ -6,7 +6,7 @@
     "nix-deploy-contracts-cronos": "./node_modules/.bin/truffle migrate --reset --network cronos",
     "win-deploy-contracts-cronos": ".\\node_modules\\.bin\\truffle migrate --reset --network cronos",
     "compile": "npx hardhat compile",
-    "accounts": "npx hardhat accounts --network ganache"
+    "deployCaptainsGen1": "npx hardhat run captains --network ganache"
   },
   "author": "NimbleFerret",
   "license": "MIT",
@@ -16,7 +16,8 @@
     "@nomiclabs/hardhat-waffle": "^2.0.3",
     "@openzeppelin/contracts": "^4.7.3",
     "dotenv": "^10.0.0",
-    "ethers": "^5.7.0"
+    "ethers": "^5.7.0",
+    "hardhat": "^2.12.4"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ganache": "^2.0.1",
