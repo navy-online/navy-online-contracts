@@ -2,14 +2,9 @@ const {
     time,
     loadFixture,
 } = require("@nomicfoundation/hardhat-network-helpers");
-const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
 
 describe("Deploy captains and mint", function () {
-    // We define a fixture to reuse the same setup in every test.
-    // We use loadFixture to run this setup once, snapshot that state,
-    // and reset Hardhat Network to that snapshot in every test.
-
     const tokensTotal = 200;
     const mintPrice = ethers.utils.parseEther("1");
     const twoEth = ethers.utils.parseEther("2");
@@ -23,9 +18,13 @@ describe("Deploy captains and mint", function () {
         const saleContract = await collectionSale.deploy(tokensTotal, mintPrice, captainContract.address);
         await saleContract.deployed();
 
+        const [owner, otherAccount] = await ethers.getSigners();
+
         return {
             captainContract,
-            saleContract
+            saleContract,
+            owner,
+            otherAccount
         }
     }
 
@@ -51,6 +50,18 @@ describe("Deploy captains and mint", function () {
             expect(await saleContract.tokensTotal()).to.equal(tokensTotal);
         });
 
+        it("Minting state should be disabled by default ", async function () {
+            const { saleContract } = await loadFixture(deployCaptainsContractsFixture);
+            expect(await saleContract.mintState()).to.equal(0);
+        });
+
+        it("Sale contract address should be equal to captain contract address", async function () {
+            const { captainContract, saleContract } = await loadFixture(deployCaptainsContractsFixture);
+            expect(await saleContract.contractAddress()).to.equal(captainContract.address);
+        });
+    });
+
+    describe("Minting", function () {
         it("Minting price should be euqal to " + mintPrice, async function () {
             const { saleContract } = await loadFixture(deployCaptainsContractsFixture);
             expect(await saleContract.mintPrice()).to.equal(mintPrice);
@@ -66,106 +77,20 @@ describe("Deploy captains and mint", function () {
             await expect(saleContract.mint({ value: mintPrice })).to.be.revertedWith('Mint is disabled for now');
         });
 
+        it("Sale state should be changed to public", async function () {
+            const { saleContract } = await loadFixture(deployCaptainsContractsFixture);
+            await saleContract.changeMintState(2);
+            expect(await saleContract.mintState()).to.equal(2);
+        });
 
-        //         it("Should revert with the right error if called too soon", async function () {
-        //             const { lock } = await loadFixture(deployOneYearLockFixture);
+        it("Should generate an event after successful minting", async function () {
+            const { saleContract, owner, captainContract } = await loadFixture(deployCaptainsContractsFixture);
 
-        //             await expect(lock.withdraw()).to.be.revertedWith(
-        //                 "You can't withdraw yet"
-        //             );
-        //         });
-
-
-
-        // it("Should set the right owner", async function () {
-        //     const { lock, owner } = await loadFixture(deployOneYearLockFixture);
-
-        //     expect(await lock.owner()).to.equal(owner.address);
-        // });
-
-        // it("Should receive and store the funds to lock", async function () {
-        //     const { lock, lockedAmount } = await loadFixture(
-        //         deployOneYearLockFixture
-        //     );
-
-        //     expect(await ethers.provider.getBalance(lock.address)).to.equal(
-        //         lockedAmount
-        //     );
-        // });
-
-        // it("Should fail if the unlockTime is not in the future", async function () {
-        //     // We don't use the fixture here because we want a different deployment
-        //     const latestTime = await time.latest();
-        //     const Lock = await ethers.getContractFactory("Lock");
-        //     await expect(Lock.deploy(latestTime, { value: 1 })).to.be.revertedWith(
-        //         "Unlock time should be in the future"
-        //     );
-        // });
+            await saleContract.changeMintState(2);
+            await expect(saleContract.mint({ value: mintPrice }))
+                .to.emit(saleContract, "GenerateToken")
+                .withArgs(owner.address, captainContract.address);
+        });
     });
 
-    // describe("Withdrawals", function () {
-    //     describe("Validations", function () {
-    //         it("Should revert with the right error if called too soon", async function () {
-    //             const { lock } = await loadFixture(deployOneYearLockFixture);
-
-    //             await expect(lock.withdraw()).to.be.revertedWith(
-    //                 "You can't withdraw yet"
-    //             );
-    //         });
-
-    //         it("Should revert with the right error if called from another account", async function () {
-    //             const { lock, unlockTime, otherAccount } = await loadFixture(
-    //                 deployOneYearLockFixture
-    //             );
-
-    //             // We can increase the time in Hardhat Network
-    //             await time.increaseTo(unlockTime);
-
-    //             // We use lock.connect() to send a transaction from another account
-    //             await expect(lock.connect(otherAccount).withdraw()).to.be.revertedWith(
-    //                 "You aren't the owner"
-    //             );
-    //         });
-
-    //         it("Shouldn't fail if the unlockTime has arrived and the owner calls it", async function () {
-    //             const { lock, unlockTime } = await loadFixture(
-    //                 deployOneYearLockFixture
-    //             );
-
-    //             // Transactions are sent using the first signer by default
-    //             await time.increaseTo(unlockTime);
-
-    //             await expect(lock.withdraw()).not.to.be.reverted;
-    //         });
-    //     });
-
-    //     describe("Events", function () {
-    //         it("Should emit an event on withdrawals", async function () {
-    //             const { lock, unlockTime, lockedAmount } = await loadFixture(
-    //                 deployOneYearLockFixture
-    //             );
-
-    //             await time.increaseTo(unlockTime);
-
-    //             await expect(lock.withdraw())
-    //                 .to.emit(lock, "Withdrawal")
-    //                 .withArgs(lockedAmount, anyValue); // We accept any value as `when` arg
-    //         });
-    //     });
-
-    //     describe("Transfers", function () {
-    //         it("Should transfer the funds to the owner", async function () {
-    //             const { lock, unlockTime, lockedAmount, owner } = await loadFixture(
-    //                 deployOneYearLockFixture
-    //             );
-
-    //             await time.increaseTo(unlockTime);
-
-    //             await expect(lock.withdraw()).to.changeEtherBalances(
-    //                 [owner, lock],
-    //                 [lockedAmount, -lockedAmount]
-    //             );
-    //         });
-    //     });
-    // });
 });

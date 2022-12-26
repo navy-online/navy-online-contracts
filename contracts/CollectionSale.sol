@@ -31,7 +31,7 @@ contract CollectionSale is Ownable {
         contractAddress = _contractAddress;
     }
 
-    function changeSaleState(MintState _mintState) external onlyOwner {
+    function changeMintState(MintState _mintState) external onlyOwner {
         mintState = _mintState;
     }
 
@@ -71,7 +71,6 @@ contract CollectionSale is Ownable {
         require(msg.value == mintPrice, "Wrong mint price");
         require(mintState != MintState.DISABLED, "Mint is disabled for now");
         require(tokensTotal > 0, "No more tokens for sale");
-        // require(address(msg.sender).balance >= mintPrice, "Insufficient funds");
         if (mintState == MintState.WHITELIST) {
             require(whitelist[msg.sender], "You need to be whitelisted");
         }
