@@ -7,8 +7,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomicfoundation/hardhat-chai-matchers";
 
 const GanachePrivateKey = <string>process.env.GANACHE_PRIVATE_KEY;
-const MainnetPrivateKey = <string>process.env.MAINNET_PRIVATE_KEY;
-const TestnetPrivateKey = <string>process.env.TESTNET_PRIVATE_KEY;
+const PrivateKey = <string>process.env.PRIVATE_KEY;
 
 task("accounts", "Prints the list of accounts", async (args, hre) => {
   const accounts = await hre.ethers.getSigners();
@@ -28,13 +27,13 @@ const config: HardhatUserConfig = {
     cronosTestnet: {
       url: "https://evm-t3.cronos.org",
       chainId: 338,
-      accounts: [TestnetPrivateKey],
+      accounts: [PrivateKey],
       gasPrice: 5000000000000,
     },
     cronos: {
       url: "https://evm.cronos.org/",
       chainId: 25,
-      accounts: [MainnetPrivateKey],
+      accounts: [PrivateKey],
       gasPrice: 5000000000000,
     },
   },

@@ -28,22 +28,6 @@ describe("Deploy captains and mint", function () {
         }
     }
 
-    async function deployOneYearLockFixture() {
-        const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
-        const ONE_GWEI = 1_000_000_000;
-
-        const lockedAmount = ONE_GWEI;
-        const unlockTime = (await time.latest()) + ONE_YEAR_IN_SECS;
-
-        // Contracts are deployed using the first signer/account by default
-        const [owner, otherAccount] = await ethers.getSigners();
-
-        const Lock = await ethers.getContractFactory("Lock");
-        const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
-
-        return { lock, unlockTime, lockedAmount, owner, otherAccount };
-    }
-
     describe("Deployment", function () {
         it("Tokens for sale amount should be equal to " + tokensTotal, async function () {
             const { saleContract } = await loadFixture(deployCaptainsContractsFixture);
@@ -83,14 +67,16 @@ describe("Deploy captains and mint", function () {
             expect(await saleContract.mintState()).to.equal(2);
         });
 
-        it("Should generate an event after successful minting", async function () {
+        it("Should generate an event after successful minting and amount of tokens should be minus one", async function () {
             const { saleContract, owner, captainContract } = await loadFixture(deployCaptainsContractsFixture);
 
             await saleContract.changeMintState(2);
             await expect(saleContract.mint({ value: mintPrice }))
                 .to.emit(saleContract, "GenerateToken")
                 .withArgs(owner.address, captainContract.address);
+            expect(await saleContract.tokensTotal()).to.equal(tokensTotal - 1);
         });
+
     });
 
 });

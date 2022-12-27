@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "nix-deploy-contracts-cronos": "./node_modules/.bin/truffle migrate --reset --network cronos",
-    "win-deploy-contracts-cronos": ".\\node_modules\\.bin\\truffle migrate --reset --network cronos",
     "compile": "npx hardhat compile",
-    "deployCaptainsGen1": "npx hardhat run captains --network ganache"
+    "test": "npx hardhat test",
+    "deployCaptainsOnGanache": "npx hardhat run captains --network ganache",
+    "deployCaptainsOnCronosTestnet": "npx hardhat run .\\scripts\\deployCaptainsAndSaleContracts.ts --network cronosTestnet"
   },
   "author": "NimbleFerret",
   "license": "MIT",
@@ -20,6 +20,7 @@
     "hardhat": "^2.12.4"
   },
   "devDependencies": {
+    "@cronos-labs/hardhat-cronoscan": "^0.0.4",
     "@nomiclabs/hardhat-ganache": "^2.0.1",
     "prettier": "^2.8.1",
     "prettier-plugin-solidity": "^1.1.0",
