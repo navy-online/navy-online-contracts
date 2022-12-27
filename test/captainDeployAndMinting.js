@@ -31,7 +31,10 @@ describe("Deploy captains and mint", function () {
     describe("Deployment", function () {
         it("Tokens for sale amount should be equal to " + tokensTotal, async function () {
             const { saleContract } = await loadFixture(deployCaptainsContractsFixture);
-            expect(await saleContract.tokensTotal()).to.equal(tokensTotal);
+            const tokensTotal = await saleContract.tokensTotal();
+            const tokensLeft = await saleContract.tokensLeft();
+            expect(tokensTotal).to.equal(tokensTotal);
+            expect(tokensLeft).to.equal(tokensTotal);
         });
 
         it("Minting state should be disabled by default ", async function () {
@@ -69,12 +72,11 @@ describe("Deploy captains and mint", function () {
 
         it("Should generate an event after successful minting and amount of tokens should be minus one", async function () {
             const { saleContract, owner, captainContract } = await loadFixture(deployCaptainsContractsFixture);
-
             await saleContract.changeMintState(2);
             await expect(saleContract.mint({ value: mintPrice }))
                 .to.emit(saleContract, "GenerateToken")
                 .withArgs(owner.address, captainContract.address);
-            expect(await saleContract.tokensTotal()).to.equal(tokensTotal - 1);
+            expect(await saleContract.tokensLeft()).to.equal(tokensTotal - 1);
         });
 
     });

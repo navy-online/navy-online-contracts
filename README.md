@@ -2,7 +2,8 @@
 
 ```shell
 npm i
-npm run test
+npx hardhat compile
+npx hardhat test
 npm run deploy***
 ```
 

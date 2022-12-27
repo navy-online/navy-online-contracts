@@ -16,6 +16,7 @@ contract CollectionSale is Ownable {
     MintState public mintState = MintState.DISABLED; // 0, 1, 2
 
     uint256 public tokensTotal;
+    uint256 public tokensLeft;
     uint256 public mintPrice;
     address public contractAddress;
 
@@ -27,6 +28,7 @@ contract CollectionSale is Ownable {
         address _contractAddress
     ) {
         tokensTotal = _tokensTotal;
+        tokensLeft = _tokensTotal;
         mintPrice = _mintPrice;
         contractAddress = _contractAddress;
     }
@@ -70,11 +72,11 @@ contract CollectionSale is Ownable {
     function mint() external payable {
         require(msg.value == mintPrice, "Wrong mint price");
         require(mintState != MintState.DISABLED, "Mint is disabled for now");
-        require(tokensTotal > 0, "No more tokens for sale");
+        require(tokensLeft > 0, "No more tokens for sale");
         if (mintState == MintState.WHITELIST) {
             require(whitelist[msg.sender], "You need to be whitelisted");
         }
-        tokensTotal -= 1;
+        tokensLeft -= 1;
         emit GenerateToken(msg.sender, contractAddress);
     }
 }
