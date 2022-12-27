@@ -4,10 +4,14 @@ dotenv.config();
 import { HardhatUserConfig } from "hardhat/config";
 import { task } from "hardhat/config";
 import "@nomiclabs/hardhat-waffle";
-import "@nomicfoundation/hardhat-chai-matchers";
+import "@nomiclabs/hardhat-etherscan";
+import "@cronos-labs/hardhat-cronoscan";
+// import "@nomicfoundation/hardhat-chai-matchers";
 
 const GanachePrivateKey = <string>process.env.GANACHE_PRIVATE_KEY;
 const PrivateKey = <string>process.env.PRIVATE_KEY;
+const CronoscanMainnetApiKey = <string>process.env.CRONOSCAN_MAINNET_API_KEY;
+const CronoscanTestnetApiKey = <string>process.env.CRONOSCAN_TESTNET_API_KEY;
 
 task("accounts", "Prints the list of accounts", async (args, hre) => {
   const accounts = await hre.ethers.getSigners();
@@ -35,6 +39,12 @@ const config: HardhatUserConfig = {
       chainId: 25,
       accounts: [PrivateKey],
       gasPrice: 5000000000000,
+    },
+  },
+  etherscan: {
+    apiKey: {
+      cronosTestnet: CronoscanMainnetApiKey,
+      cronos: CronoscanTestnetApiKey
     },
   },
   solidity: {
