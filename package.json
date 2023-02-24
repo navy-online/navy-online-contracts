@@ -4,7 +4,8 @@
   "description": "",
   "scripts": {
     "deployCaptainsOnGanache": "npx hardhat run .\\scripts\\deployCaptainsAndSaleContracts.ts --network ganache",
-    "deployCaptainsOnCronosTestnet": "npx hardhat run .\\scripts\\deployCaptainsAndSaleContracts.ts --network cronosTestnet"
+    "deployCaptainsOnCronosTestnet": "npx hardhat run .\\scripts\\deployCaptainsAndSaleContracts.ts --network cronosTestnet",
+    "deployMarketplaceOnCronosTestnet": "npx hardhat run .\\scripts\\deployMarketplace.ts --network cronosTestnet"
   },
   "author": "NimbleFerret",
   "license": "MIT",
