@@ -2,7 +2,7 @@ import { ethers } from "hardhat";
 
 async function main() {
   const Captain = await ethers.getContractFactory("Captain");
-  const captainContract = await Captain.deploy();
+  const captainContract = await Captain.deploy('0x175Df5CF497C1FbC843699244E8deAb3B15aA9a4');
   await captainContract.deployed();
 
   const tokensTotal = 200;

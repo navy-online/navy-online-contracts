@@ -51,15 +51,22 @@ abstract contract UpgradableEntity is ERC721URIStorage, AccessControl {
         return newItemId;
     }
 
-    // Entity upgrade
-
-    function levelUpNFT(uint256 tokenId) public onlyRole(NVY_BACKEND) {
-        idToEntityLevel[tokenId] = idToEntityLevel[tokenId] + 1;
-    }
-
     // ---------------------------------------
     // Admin functions
     // ---------------------------------------
+
+    function changeUpgradeRequirementsByLevel(
+        uint256 level,
+        uint256 chance,
+        uint256 nvy,
+        uint256 aks
+    ) external onlyRole(NVY_BACKEND) {
+        levelToUpgrade[level] = GameLibrary.UpgradeRequirementsByLevel(
+            chance,
+            nvy,
+            aks
+        );
+    }
 
     function addNvyBackendAddress(
         address addr

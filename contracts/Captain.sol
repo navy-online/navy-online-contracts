@@ -6,10 +6,15 @@ import "./UpgradableEntity.sol";
 
 contract Captain is UpgradableEntity {
     IIsland private island;
+    address public marketplaceContract;
 
     mapping(uint256 => GameLibrary.CaptainStats) public idToCaptains;
 
-    constructor() public ERC721("CPT", "NVYCPT") {
+    constructor(address _marketplaceContract) public ERC721("CPT", "NVYCPT") {
+        marketplaceContract = _marketplaceContract;
+
+        setApprovalForAll(marketplaceContract, true);
+
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
         levelToUpgrade[1] = GameLibrary.UpgradeRequirementsByLevel(100, 1, 55);
@@ -35,11 +40,13 @@ contract Captain is UpgradableEntity {
 
     function updateCaptain(
         uint256 captainId,
+        uint256 level,
         GameLibrary.CaptainStats memory captain,
-        string memory newMetadataURI
+        string memory metadataURI
     ) external onlyRole(NVY_BACKEND) {
         idToCaptains[captainId] = captain;
-        _setTokenURI(captainId, newMetadataURI);
+        idToEntityLevel[captainId] = level;
+        _setTokenURI(captainId, metadataURI);
     }
 
     function tryUpgrade(uint256 captainId, uint256 islandId) external {
@@ -66,7 +73,7 @@ contract Captain is UpgradableEntity {
         require(nvyToken.balanceOf(msg.sender) >= reqNvy, "Not enought NVY");
         require(aksToken.balanceOf(msg.sender) >= reqAks, "Not enought AKS");
 
-        // Pay the fees and burn tokens if not owner
+        // Pay the fees and burn tokens if not an owner
         if (ERC721.ownerOf(captainId) != ERC721.ownerOf(islandId)) {
             uint256 feeNvy = (reqNvy / 100) *
                 island.getIslandInfo(islandId).shipAndCaptainFee;

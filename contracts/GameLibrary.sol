@@ -2,12 +2,8 @@
 pragma solidity ^0.8.9;
 
 library GameLibrary {
-    enum Rarity {
-        COMMON,
-        RARE,
-        EPIC,
-        LEGENDARY
-    }
+    uint256 constant shipAndCaptainMaxLevel = 10;
+    uint256 constant islandMaxLevel = 3;
 
     struct UpgradeRequirementsByLevel {
         uint256 chance;
@@ -22,27 +18,11 @@ library GameLibrary {
         uint256 stakingDurationSeconds;
     }
 
-    enum ShipSize {
-        SMALL,
-        MEDIUM,
-        LARGE
-    }
-
     struct ShipStats {
         uint256 maxIntegrity;
         uint256 currentIntegrity;
         uint256 repairCostNVY;
         uint256 repairCostAKS;
-    }
-
-    uint256 constant shipAndCaptainMaxLevel = 10;
-    uint256 constant islandMaxLevel = 3;
-
-    enum IslandSize {
-        SMALL,
-        MEDIUM,
-        LARGE,
-        EXTRA_LARGE
     }
 
     struct IslandStats {
