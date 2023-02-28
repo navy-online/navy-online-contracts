@@ -10,21 +10,36 @@ describe("Deploy captains and mint", function () {
     const twoEth = ethers.utils.parseEther("2");
 
     async function deployCaptainsContractsFixture() {
+        const marketplace = await ethers.getContractFactory("Marketplace");
+        const marketplaceContract = await marketplace.deploy();
+        await marketplaceContract.deployed();
+
         const captain = await ethers.getContractFactory("Captain");
-        const captainContract = await captain.deploy();
+        const captainContract = await captain.deploy(marketplaceContract.address);
         await captainContract.deployed();
 
         const collectionSale = await ethers.getContractFactory("CollectionSale");
         const saleContract = await collectionSale.deploy(tokensTotal, mintPrice, captainContract.address);
         await saleContract.deployed();
 
-        const [owner, otherAccount] = await ethers.getSigners();
+        const [ownerAccount, firstAccount, secondAccount] = await ethers.getSigners();
+
+        await captainContract.addNvyBackendAddress(ownerAccount.address);
+
+        console.log('captainContract: ' + captainContract.address);
+        console.log('saleContract: ' + saleContract.address);
+        console.log('marketplaceContract: ' + marketplaceContract.address);
+        console.log('ownerAccount: ' + ownerAccount.address);
+        console.log('firstAccount: ' + firstAccount.address);
+        console.log('secondAccount: ' + secondAccount.address);
 
         return {
             captainContract,
             saleContract,
-            owner,
-            otherAccount
+            marketplaceContract,
+            ownerAccount,
+            firstAccount,
+            secondAccount
         }
     }
 
@@ -70,15 +85,62 @@ describe("Deploy captains and mint", function () {
             expect(await saleContract.mintState()).to.equal(2);
         });
 
-        it("Should generate an event after successful minting and amount of tokens should be minus one", async function () {
-            const { saleContract, owner, captainContract } = await loadFixture(deployCaptainsContractsFixture);
-            await saleContract.changeMintState(2);
-            await expect(saleContract.mint({ value: mintPrice }))
-                .to.emit(saleContract, "GenerateToken")
-                .withArgs(owner.address, captainContract.address);
-            expect(await saleContract.tokensLeft()).to.equal(tokensTotal - 1);
-        });
+        it("Should mint a new token, generate an event after successful minting and amount of tokens should be minus one", async function () {
+            const { firstAccount, saleContract, captainContract } = await loadFixture(deployCaptainsContractsFixture);
 
+            await saleContract.changeMintState(2);
+
+            await expect(saleContract.connect(firstAccount).mint({ value: mintPrice }))
+                .to.emit(saleContract, "GenerateToken")
+                .withArgs(firstAccount.address, captainContract.address);
+            expect(await saleContract.tokensLeft()).to.equal(tokensTotal - 1);
+
+            await expect(captainContract.grantCaptain(firstAccount.address, 1000, 100, "https://some.url"))
+                .to.emit(captainContract, "GrantEntity")
+                .withArgs(firstAccount.address, 1);
+        });
+    });
+
+    describe("Marketplace", function () {
+        it("Owner should list a token and buyer buy it", async function () {
+            const { firstAccount, secondAccount, marketplaceContract, captainContract } = await loadFixture(deployCaptainsContractsFixture);
+
+            // Grant a captain
+            await expect(captainContract.grantCaptain(firstAccount.address, 1000, 100, "https://some.url"))
+                .to.emit(captainContract, "GrantEntity")
+                .withArgs(firstAccount.address, 1);
+
+            // Allow the marketplace to transfer ht token
+            await captainContract.connect(firstAccount).approve(marketplaceContract.address, 1);
+
+            // Token listing
+            await expect(marketplaceContract.connect(firstAccount).listNft(captainContract.address, 1, mintPrice))
+                .to.emit(marketplaceContract, "NFTListed")
+                .withArgs(
+                    captainContract.address,
+                    1,
+                    firstAccount.address,
+                    marketplaceContract.address,
+                    mintPrice
+                );
+
+            // Tokens listed in total    
+            const listedNfts = await marketplaceContract.getListedNfts();
+            expect(listedNfts.length).to.be.equal(1);
+
+            // Buy nft
+            await expect(marketplaceContract.connect(secondAccount).buyNft(captainContract.address, 1, { value: mintPrice }))
+                .to.emit(marketplaceContract, "NFTSold")
+                .withArgs(
+                    captainContract.address,
+                    1,
+                    firstAccount.address,
+                    secondAccount.address,
+                    mintPrice
+                );
+
+            // console.log((await marketplaceContract.getListedNfts())[0][1]);
+        });
     });
 
 });

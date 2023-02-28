@@ -27,7 +27,7 @@ abstract contract UpgradableEntity is ERC721URIStorage, AccessControl {
     // Keep track of every entity level by it's id
     mapping(uint256 => uint256) public idToEntityLevel;
 
-    // Upgrade event for Navy.online backend
+    event GrantEntity(address owner, uint256 tokenId);
     event UpgradeEntity(address owner, uint256 tokenId);
 
     function requireMinted(uint256 tokenId) external view {

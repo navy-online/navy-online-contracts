@@ -10,8 +10,9 @@ contract Marketplace is ReentrancyGuard {
     Counters.Counter private _nftsSold;
     Counters.Counter private _nftCount;
     address payable private _marketOwner;
-    uint256 public MARKETPLACE_ROYALTY_PERCENTAGE = 10;
-    mapping(uint256 => NFT) private _idToNFT;
+    uint256 public MARKETPLACE_ROYALTY_PERCENTAGE = 5;
+
+    mapping(uint256 => NFT) private _nftListed;
 
     struct NFT {
         address nftContract;
@@ -51,13 +52,11 @@ contract Marketplace is ReentrancyGuard {
     ) public nonReentrant {
         require(_price > 0, "Price must be at least 1 wei");
 
-        // TODO check ownership
-
         IERC721(_nftContract).transferFrom(msg.sender, address(this), _tokenId);
 
         _nftCount.increment();
 
-        _idToNFT[_tokenId] = NFT(
+        _nftListed[_tokenId] = NFT(
             _nftContract,
             _tokenId,
             msg.sender,
@@ -76,11 +75,11 @@ contract Marketplace is ReentrancyGuard {
     }
 
     function delistNft(uint256 _tokenId) public nonReentrant {
-        NFT storage nft = _idToNFT[_tokenId];
+        NFT storage nft = _nftListed[_tokenId];
 
         require(nft.seller == msg.sender, "Only seller is able to delist");
 
-        delete _idToNFT[_tokenId];
+        delete _nftListed[_tokenId];
 
         emit NFTDelisted(_tokenId, msg.sender);
     }
@@ -89,20 +88,21 @@ contract Marketplace is ReentrancyGuard {
         address _nftContract,
         uint256 _tokenId
     ) public payable nonReentrant {
-        NFT storage nft = _idToNFT[_tokenId];
+        NFT storage nft = _nftListed[_tokenId];
         require(
-            msg.value >=
-                nft.price +
-                    ((nft.price / 100) * MARKETPLACE_ROYALTY_PERCENTAGE),
+            msg.value >= nft.price,
             "Not enough ether to cover asking price"
         );
 
         address buyer = msg.sender;
-        payable(nft.seller).transfer(msg.value);
+        uint256 marketplaceShare = (nft.price / 100) *
+            MARKETPLACE_ROYALTY_PERCENTAGE;
+        uint256 sellerShare = msg.value - marketplaceShare;
+
+        payable(nft.seller).transfer(sellerShare);
+        _marketOwner.transfer(marketplaceShare);
+
         IERC721(_nftContract).transferFrom(address(this), buyer, nft.tokenId);
-        _marketOwner.transfer(
-            (nft.price / 100) * MARKETPLACE_ROYALTY_PERCENTAGE
-        );
         nft.owner = buyer;
         nft.listed = false;
 
@@ -117,8 +117,8 @@ contract Marketplace is ReentrancyGuard {
         NFT[] memory nfts = new NFT[](unsoldNftsCount);
         uint nftsIndex = 0;
         for (uint i = 0; i < nftCount; i++) {
-            if (_idToNFT[i + 1].listed) {
-                nfts[nftsIndex] = _idToNFT[i + 1];
+            if (_nftListed[i + 1].listed) {
+                nfts[nftsIndex] = _nftListed[i + 1];
                 nftsIndex++;
             }
         }

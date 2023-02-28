@@ -1,20 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
+import "hardhat/console.sol";
+
 import "./IIsland.sol";
 import "./UpgradableEntity.sol";
 
 contract Captain is UpgradableEntity {
     IIsland private island;
-    address public marketplaceContract;
 
     mapping(uint256 => GameLibrary.CaptainStats) public idToCaptains;
 
+    // constructor() public ERC721("CPT", "NVYCPT") {
     constructor(address _marketplaceContract) public ERC721("CPT", "NVYCPT") {
-        marketplaceContract = _marketplaceContract;
-
-        setApprovalForAll(marketplaceContract, true);
-
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
         levelToUpgrade[1] = GameLibrary.UpgradeRequirementsByLevel(100, 1, 55);
@@ -31,11 +29,18 @@ contract Captain is UpgradableEntity {
 
     function grantCaptain(
         address player,
-        GameLibrary.CaptainStats memory captain,
+        uint256 stakingRewardNVY,
+        uint256 stakingDurationSeconds,
         string memory tokenURI
-    ) external onlyRole(NVY_BACKEND) {
+    ) external onlyRole(NVY_BACKEND) returns (uint256) {
         uint256 tokenId = grantNFT(player, tokenURI);
-        idToCaptains[tokenId] = captain;
+        idToCaptains[tokenId] = GameLibrary.CaptainStats(
+            false,
+            stakingRewardNVY,
+            0,
+            stakingDurationSeconds
+        );
+        emit GrantEntity(player, tokenId);
     }
 
     function updateCaptain(
