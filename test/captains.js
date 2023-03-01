@@ -15,7 +15,7 @@ describe("Deploy captains and mint", function () {
         await marketplaceContract.deployed();
 
         const captain = await ethers.getContractFactory("Captain");
-        const captainContract = await captain.deploy(marketplaceContract.address);
+        const captainContract = await captain.deploy();
         await captainContract.deployed();
 
         const collectionSale = await ethers.getContractFactory("CollectionSale");
@@ -105,13 +105,15 @@ describe("Deploy captains and mint", function () {
         it("Owner should list a token and buyer buy it", async function () {
             const { firstAccount, secondAccount, marketplaceContract, captainContract } = await loadFixture(deployCaptainsContractsFixture);
 
+            const tokenURI = "https://some.url";
+
             // Grant a captain
-            await expect(captainContract.grantCaptain(firstAccount.address, 1000, 100, "https://some.url"))
+            await expect(captainContract.grantCaptain(firstAccount.address, 1000, 100, tokenURI))
                 .to.emit(captainContract, "GrantEntity")
                 .withArgs(firstAccount.address, 1);
 
-            // Allow the marketplace to transfer ht token
-            await captainContract.connect(firstAccount).approve(marketplaceContract.address, 1);
+            // Allow the marketplace to transfer the token
+            await captainContract.connect(firstAccount).setApprovalForAll(marketplaceContract.address, true);
 
             // Token listing
             await expect(marketplaceContract.connect(firstAccount).listNft(captainContract.address, 1, mintPrice))
@@ -119,6 +121,7 @@ describe("Deploy captains and mint", function () {
                 .withArgs(
                     captainContract.address,
                     1,
+                    tokenURI,
                     firstAccount.address,
                     marketplaceContract.address,
                     mintPrice
@@ -126,6 +129,7 @@ describe("Deploy captains and mint", function () {
 
             // Tokens listed in total    
             const listedNfts = await marketplaceContract.getListedNfts();
+            console.log(listedNfts);
             expect(listedNfts.length).to.be.equal(1);
 
             // Buy nft

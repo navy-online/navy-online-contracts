@@ -3,6 +3,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Marketplace is ReentrancyGuard {
@@ -14,9 +15,11 @@ contract Marketplace is ReentrancyGuard {
 
     mapping(uint256 => NFT) private _nftListed;
 
+    // TODO pass struct into the event ?
     struct NFT {
         address nftContract;
         uint256 tokenId;
+        string tokenUri;
         address seller;
         address owner;
         uint256 price;
@@ -26,6 +29,7 @@ contract Marketplace is ReentrancyGuard {
     event NFTListed(
         address nftContract,
         uint256 tokenId,
+        string tokenUri,
         address seller,
         address owner,
         uint256 price
@@ -52,13 +56,23 @@ contract Marketplace is ReentrancyGuard {
     ) public nonReentrant {
         require(_price > 0, "Price must be at least 1 wei");
 
-        IERC721(_nftContract).transferFrom(msg.sender, address(this), _tokenId);
+        ERC721URIStorage(_nftContract).transferFrom(
+            msg.sender,
+            address(this),
+            _tokenId
+        );
+
+        string memory tokenUri = ERC721URIStorage(_nftContract).tokenURI(
+            _tokenId
+        );
+        // IERC721(_nftContract).transferFrom(msg.sender, address(this), _tokenId);
 
         _nftCount.increment();
 
         _nftListed[_tokenId] = NFT(
             _nftContract,
             _tokenId,
+            tokenUri,
             msg.sender,
             address(this),
             _price,
@@ -68,6 +82,7 @@ contract Marketplace is ReentrancyGuard {
         emit NFTListed(
             _nftContract,
             _tokenId,
+            tokenUri,
             msg.sender,
             address(this),
             _price

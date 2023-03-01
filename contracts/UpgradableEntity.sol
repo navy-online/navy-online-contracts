@@ -9,6 +9,7 @@ import "./IIsland.sol";
 import "./IToken.sol";
 import "./GameLibrary.sol";
 
+// TODO implement totalSupply
 abstract contract UpgradableEntity is ERC721URIStorage, AccessControl {
     IToken public nvyToken;
     IToken public aksToken;
@@ -29,6 +30,10 @@ abstract contract UpgradableEntity is ERC721URIStorage, AccessControl {
 
     event GrantEntity(address owner, uint256 tokenId);
     event UpgradeEntity(address owner, uint256 tokenId);
+
+    function totalSupply() public view returns (uint256) {
+        return _tokenIds.current();
+    }
 
     function requireMinted(uint256 tokenId) external view {
         _requireMinted(tokenId);

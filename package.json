@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "deployCaptainsOnGanache": "npx hardhat run .\\scripts\\deployCaptainsAndSaleContracts.ts --network ganache",
-    "deployCaptainsOnCronosTestnet": "npx hardhat run .\\scripts\\deployCaptainsAndSaleContracts.ts --network cronosTestnet",
-    "deployMarketplaceOnCronosTestnet": "npx hardhat run .\\scripts\\deployMarketplace.ts --network cronosTestnet"
+    "deployCaptainsOnGanache": "npx hardhat run .\\scripts\\deployCaptains.ts --network ganache",
+    "deployCaptainsOnCronosTestnet": "npx hardhat run .\\scripts\\deployCaptains.ts --network cronosTestnet"
   },
   "author": "NimbleFerret",
   "license": "MIT",

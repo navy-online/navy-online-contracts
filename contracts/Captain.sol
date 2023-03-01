@@ -11,8 +11,7 @@ contract Captain is UpgradableEntity {
 
     mapping(uint256 => GameLibrary.CaptainStats) public idToCaptains;
 
-    // constructor() public ERC721("CPT", "NVYCPT") {
-    constructor(address _marketplaceContract) public ERC721("CPT", "NVYCPT") {
+    constructor() public ERC721("CPT", "NVYCPT") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
         levelToUpgrade[1] = GameLibrary.UpgradeRequirementsByLevel(100, 1, 55);
