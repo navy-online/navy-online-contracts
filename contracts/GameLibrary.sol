@@ -5,6 +5,14 @@ library GameLibrary {
     uint256 constant shipAndCaptainMaxLevel = 10;
     uint256 constant islandMaxLevel = 3;
 
+    // 0, 1, 2, 3
+    enum Rarity {
+        COMMON,
+        RARE,
+        EPIC,
+        LEGENDARY
+    }
+
     struct UpgradeRequirementsByLevel {
         uint256 chance;
         uint256 nvy;
@@ -13,7 +21,6 @@ library GameLibrary {
 
     struct CaptainStats {
         bool staking;
-        uint256 stakingRewardNVY;
         uint256 stakingStartedAt;
         uint256 stakingDurationSeconds;
     }

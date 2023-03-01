@@ -95,7 +95,7 @@ describe("Deploy captains and mint", function () {
                 .withArgs(firstAccount.address, captainContract.address);
             expect(await saleContract.tokensLeft()).to.equal(tokensTotal - 1);
 
-            await expect(captainContract.grantCaptain(firstAccount.address, 1000, 100, "https://some.url"))
+            await expect(captainContract.grantCaptain(firstAccount.address, "https://some.url"))
                 .to.emit(captainContract, "GrantEntity")
                 .withArgs(firstAccount.address, 1);
         });
@@ -108,7 +108,7 @@ describe("Deploy captains and mint", function () {
             const tokenURI = "https://some.url";
 
             // Grant a captain
-            await expect(captainContract.grantCaptain(firstAccount.address, 1000, 100, tokenURI))
+            await expect(captainContract.grantCaptain(firstAccount.address, tokenURI))
                 .to.emit(captainContract, "GrantEntity")
                 .withArgs(firstAccount.address, 1);
 
@@ -128,9 +128,8 @@ describe("Deploy captains and mint", function () {
                 );
 
             // Tokens listed in total    
-            const listedNfts = await marketplaceContract.getListedNfts();
-            console.log(listedNfts);
-            expect(listedNfts.length).to.be.equal(1);
+            const nftsListedBefore = await marketplaceContract.getNftsListed();
+            expect(nftsListedBefore.length).to.equal(1);
 
             // Buy nft
             await expect(marketplaceContract.connect(secondAccount).buyNft(captainContract.address, 1, { value: mintPrice }))
@@ -143,7 +142,11 @@ describe("Deploy captains and mint", function () {
                     mintPrice
                 );
 
-            // console.log((await marketplaceContract.getListedNfts())[0][1]);
+            const nftsListedAfter = await marketplaceContract.getNftsListed();
+            expect(nftsListedAfter.length).to.be.equal(0);
+
+            const nftsSold = await marketplaceContract.getNftsSold();
+            expect(nftsSold.length).to.be.equal(1);
         });
     });
 

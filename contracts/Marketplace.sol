@@ -8,12 +8,15 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Marketplace is ReentrancyGuard {
     using Counters for Counters.Counter;
-    Counters.Counter private _nftsSold;
-    Counters.Counter private _nftCount;
+    Counters.Counter private _nftsListedCount;
+    Counters.Counter private _nftsSoldCount;
     address payable private _marketOwner;
     uint256 public MARKETPLACE_ROYALTY_PERCENTAGE = 5;
 
-    mapping(uint256 => NFT) private _nftListed;
+    mapping(uint256 => NFT) private _nftsListedByIndex;
+    mapping(uint256 => uint256) private _nftsListedIndexByTokenId;
+
+    mapping(uint256 => NFT) private _nftsSoldByIndex;
 
     // TODO pass struct into the event ?
     struct NFT {
@@ -23,7 +26,7 @@ contract Marketplace is ReentrancyGuard {
         address seller;
         address owner;
         uint256 price;
-        bool listed;
+        uint lastUpdated;
     }
 
     event NFTListed(
@@ -35,7 +38,7 @@ contract Marketplace is ReentrancyGuard {
         uint256 price
     );
 
-    event NFTDelisted(uint256 tokenId, address seller);
+    event NFTDelisted(uint256 tokenId, address nftContract, address seller);
 
     event NFTSold(
         address nftContract,
@@ -65,18 +68,18 @@ contract Marketplace is ReentrancyGuard {
         string memory tokenUri = ERC721URIStorage(_nftContract).tokenURI(
             _tokenId
         );
-        // IERC721(_nftContract).transferFrom(msg.sender, address(this), _tokenId);
 
-        _nftCount.increment();
+        _nftsListedCount.increment();
 
-        _nftListed[_tokenId] = NFT(
+        _nftsListedIndexByTokenId[_tokenId] = _nftsListedCount.current();
+        _nftsListedByIndex[_nftsListedCount.current()] = NFT(
             _nftContract,
             _tokenId,
             tokenUri,
             msg.sender,
             address(this),
             _price,
-            true
+            block.timestamp
         );
 
         emit NFTListed(
@@ -90,20 +93,25 @@ contract Marketplace is ReentrancyGuard {
     }
 
     function delistNft(uint256 _tokenId) public nonReentrant {
-        NFT storage nft = _nftListed[_tokenId];
+        uint256 nftIndex = _nftsListedIndexByTokenId[_tokenId];
+        NFT storage nft = _nftsListedByIndex[nftIndex];
 
         require(nft.seller == msg.sender, "Only seller is able to delist");
 
-        delete _nftListed[_tokenId];
+        _nftsListedCount.decrement();
+        delete _nftsListedByIndex[nftIndex];
+        delete _nftsListedIndexByTokenId[_tokenId];
 
-        emit NFTDelisted(_tokenId, msg.sender);
+        emit NFTDelisted(_tokenId, nft.nftContract, msg.sender);
     }
 
     function buyNft(
         address _nftContract,
         uint256 _tokenId
     ) public payable nonReentrant {
-        NFT storage nft = _nftListed[_tokenId];
+        uint256 nftIndex = _nftsListedIndexByTokenId[_tokenId];
+        NFT storage nft = _nftsListedByIndex[nftIndex];
+
         require(
             msg.value >= nft.price,
             "Not enough ether to cover asking price"
@@ -119,23 +127,39 @@ contract Marketplace is ReentrancyGuard {
 
         IERC721(_nftContract).transferFrom(address(this), buyer, nft.tokenId);
         nft.owner = buyer;
-        nft.listed = false;
+        nft.lastUpdated = block.timestamp;
 
-        _nftsSold.increment();
+        _nftsSoldCount.increment();
+        _nftsSoldByIndex[_nftsSoldCount.current()] = nft;
+
         emit NFTSold(_nftContract, nft.tokenId, nft.seller, buyer, msg.value);
+
+        uint256 nftListedIndex = _nftsListedIndexByTokenId[_tokenId];
+        delete _nftsListedByIndex[nftListedIndex];
+        delete _nftsListedIndexByTokenId[_tokenId];
+        _nftsListedCount.decrement();
     }
 
-    function getListedNfts() public view returns (NFT[] memory) {
-        uint256 nftCount = _nftCount.current();
-        uint256 unsoldNftsCount = nftCount - _nftsSold.current();
+    function getNftsListed() public view returns (NFT[] memory) {
+        uint256 nftCount = _nftsListedCount.current();
 
-        NFT[] memory nfts = new NFT[](unsoldNftsCount);
+        NFT[] memory nfts = new NFT[](nftCount);
         uint nftsIndex = 0;
         for (uint i = 0; i < nftCount; i++) {
-            if (_nftListed[i + 1].listed) {
-                nfts[nftsIndex] = _nftListed[i + 1];
-                nftsIndex++;
-            }
+            nfts[nftsIndex] = _nftsListedByIndex[i + 1];
+            nftsIndex++;
+        }
+        return nfts;
+    }
+
+    function getNftsSold() public view returns (NFT[] memory) {
+        uint256 nftCount = _nftsSoldCount.current();
+
+        NFT[] memory nfts = new NFT[](nftCount);
+        uint nftsIndex = 0;
+        for (uint i = 0; i < nftCount; i++) {
+            nfts[nftsIndex] = _nftsSoldByIndex[i + 1];
+            nftsIndex++;
         }
         return nfts;
     }
