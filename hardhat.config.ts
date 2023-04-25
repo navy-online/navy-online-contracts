@@ -12,6 +12,7 @@ const GanachePrivateKey = <string>process.env.GANACHE_PRIVATE_KEY;
 const PrivateKey = <string>process.env.PRIVATE_KEY;
 const CronoscanMainnetApiKey = <string>process.env.CRONOSCAN_MAINNET_API_KEY;
 const CronoscanTestnetApiKey = <string>process.env.CRONOSCAN_TESTNET_API_KEY;
+const BscscanTestnetApiKey = <string>process.env.BSCSCAN_TESTNET_API_KEY;
 
 task("accounts", "Prints the list of accounts", async (args, hre) => {
   const accounts = await hre.ethers.getSigners();
@@ -40,11 +41,18 @@ const config: HardhatUserConfig = {
       accounts: [PrivateKey],
       gasPrice: 5000000000000,
     },
+    bscTestnet: {
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+      chainId: 97,
+      accounts: [PrivateKey],
+      gasPrice: 20000000000,
+    }
   },
   etherscan: {
     apiKey: {
       cronosTestnet: CronoscanMainnetApiKey,
-      cronos: CronoscanTestnetApiKey
+      cronos: CronoscanTestnetApiKey,
+      bscTestnet: BscscanTestnetApiKey
     },
   },
   solidity: {
