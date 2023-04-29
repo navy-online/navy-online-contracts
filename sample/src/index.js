@@ -1,4 +1,5 @@
 import Web3, { givenProvider } from "web3";
+import { ethers } from "ethers";
 
 const web3 = new Web3(givenProvider);
 let myAddress = '';
