@@ -15,10 +15,8 @@ contract Marketplace is ReentrancyGuard {
 
     mapping(uint256 => NFT) private _nftsListedByIndex;
     mapping(uint256 => uint256) private _nftsListedIndexByTokenId;
-
     mapping(uint256 => NFT) private _nftsSoldByIndex;
 
-    // TODO pass struct into the event ?
     struct NFT {
         address nftContract;
         uint256 tokenId;
@@ -97,6 +95,12 @@ contract Marketplace is ReentrancyGuard {
         NFT storage nft = _nftsListedByIndex[nftIndex];
 
         require(nft.seller == msg.sender, "Only seller is able to delist");
+
+        ERC721URIStorage(nft.nftContract).transferFrom(
+            nft.owner,
+            nft.seller,
+            _tokenId
+        );
 
         _nftsListedCount.decrement();
         delete _nftsListedByIndex[nftIndex];
