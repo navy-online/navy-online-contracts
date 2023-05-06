@@ -9,9 +9,9 @@ import { ethers } from "ethers";
 
 const web3 = new Web3(givenProvider);
 
-const CaptainsContractAddress = '0x7e77efa1050aac8e12bee238c596d1561231e2ed';
-const CaptainsSaleContractAddress = '0x5216ceb185413232adec5740d5b843af15d2a0b4';
-const CaptainsMarketplaceContractAddress = '0x2915ded8fccec77b8a7d817d5be559270c104420';
+const CaptainsContractAddress = '0xA7D87Ec62772c3cB9b59de6f4ACa4c8602910bcd';
+const CaptainsSaleContractAddress = '0x1e5Dd2734C3dcB52b0166dA6FEeF9B74175cEc05';
+const CaptainsMarketplaceContractAddress = '0x7246eA171D0F1a4c88479B10790824b2622F49b6';
 
 let myAddress = '';
 
@@ -32,6 +32,9 @@ if (typeof window.ethereum !== 'undefined') {
 
     const delistCaptainButton = document.createElement('button');
     delistCaptainButton.innerHTML = 'Delist captain';
+
+    const buyCaptainButton = document.createElement('button');
+    buyCaptainButton.innerHTML = 'Buy captain';
 
     const showMyBalanceButton = document.createElement('button');
     showMyBalanceButton.innerHTML = 'Show my balance';
@@ -73,6 +76,11 @@ if (typeof window.ethereum !== 'undefined') {
         marketplaceContract.methods.delistNft(1).send({ from: myAddress });
     });
 
+    buyCaptainButton.addEventListener('click', async () => {
+        const marketplaceContract = new web3.eth.Contract(MarketplaceContractAbi, CaptainsMarketplaceContractAddress);
+        marketplaceContract.methods.buyNft(CaptainsContractAddress, 1).send({ from: myAddress, value: '3000000000000000000' });
+    });
+
     showMyBalanceButton.addEventListener('click', async () => {
         let balance = await web3.eth.getBalance(myAddress);
         balance = web3.utils.fromWei(balance);
@@ -97,6 +105,7 @@ if (typeof window.ethereum !== 'undefined') {
     document.body.appendChild(approveCaptainsButton);
     document.body.appendChild(listCaptainButton);
     document.body.appendChild(delistCaptainButton);
+    document.body.appendChild(buyCaptainButton);
     document.body.appendChild(showMyBalanceButton);
     document.body.appendChild(signMessageButton);
 } else {
