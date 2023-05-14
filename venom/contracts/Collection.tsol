@@ -1,0 +1,177 @@
+pragma ever-solidity >= 0.61.2;
+// pragma ton-solidity ^0.58.1;
+
+pragma AbiHeader expire;
+pragma AbiHeader time;
+pragma AbiHeader pubkey;    
+
+import '@itgold/everscale-tip/contracts/TIP4_2/TIP4_2Collection.sol';
+import '@itgold/everscale-tip/contracts/TIP4_3/TIP4_3Collection.sol';
+import '@itgold/everscale-tip/contracts/access/OwnableExternal.sol';
+import './Nft.tsol';
+
+contract Collection is TIP4_2Collection, TIP4_3Collection, OwnableExternal  {
+
+    // ---------------------------
+    // Errors
+    // ---------------------------
+
+    uint8 constant sender_is_not_owner = 101;
+    uint8 constant value_is_less_than_required = 102;
+    uint8 constant maximum_supply_reached = 103;
+    uint8 constant mint_disabled = 104;
+    uint8 constant sender_is_not_whitelisted = 105;
+
+    // ---------------------------
+    // Minting 
+    // ---------------------------
+
+    uint128 public mintPrice;
+
+    enum MintState {
+        DISABLED,
+        WHITELIST,
+        PUBLIC
+    }
+    MintState public mintState = MintState.DISABLED; // 0, 1, 2
+
+    mapping(address => bool) public whitelist;
+
+    event NftMinted(uint256 id, address owner);
+
+    // ---------------------------
+    // Common 
+    // ---------------------------
+
+    uint128 _remainOnNft = 0.3 ton;
+    uint128 public collectionSize;
+
+    constructor(
+        uint128 _mintPrice,
+        uint128 _collectionSize,
+        TvmCell codeNft,
+        string json,
+        TvmCell codeIndex,
+        TvmCell codeIndexBasis
+    ) TIP4_1Collection (
+        codeNft
+    ) TIP4_2Collection (
+        json
+    ) TIP4_3Collection (
+        codeIndex,
+        codeIndexBasis
+    ) OwnableExternal (
+        msg.pubkey()
+    ) public {
+        collectionSize = _collectionSize;
+        mintPrice = _mintPrice;
+        tvm.accept();
+    }
+
+    // ---------------------------
+    // Public functions 
+    // ---------------------------
+
+    function mintNft(string json) external virtual {
+        require(mintState != MintState.DISABLED, mint_disabled);
+        if (mintState == MintState.WHITELIST) {
+            require(whitelist[msg.sender], sender_is_not_whitelisted);
+        }
+        // require(msg.value > _remainOnNft + mintPrice, value_is_less_than_required);
+          require(msg.value > mintPrice + 0.1 ton, value_is_less_than_required);
+        // require(_totalSupply == collectionSize, maximum_supply_reached);
+
+        tvm.rawReserve(0, 4);
+
+        uint256 id = uint256(_totalSupply);
+        _totalSupply++;
+
+        // emit NftMinted(id, msg.sender);
+
+        TvmCell codeNft = _buildNftCode(address(this));
+        TvmCell stateNft = _buildNftState(codeNft, id);
+
+        address nftAddr = new Nft{
+            stateInit: stateNft,
+            value: 0,
+            flag: 128
+        }(
+            msg.sender,
+            msg.sender,
+            _remainOnNft,
+            json,
+            _codeIndex,
+            _indexDeployValue,
+            _indexDestroyValue
+        );
+
+        emit NftCreated(
+            id, 
+            nftAddr,
+            msg.sender,
+            msg.sender, 
+            address(this)
+        );
+    }
+
+    // ---------------------------
+    // Owner only functions 
+    // ---------------------------
+
+    function createNft(
+        uint256 id, 
+        string json, 
+        address owner
+    ) external onlyOwner virtual {
+        TvmCell codeNft = _buildNftCode(address(this));
+        TvmCell stateNft = _buildNftState(codeNft, id);
+
+        address nftAddr = new Nft{
+            stateInit: stateNft,
+            value: 0,
+            flag: 128
+        }(
+            owner,
+            owner,
+            _remainOnNft,
+            json,
+            _codeIndex,
+            _indexDeployValue,
+            _indexDestroyValue
+        );
+
+        emit NftCreated(
+            id, 
+            nftAddr,
+            owner,
+            owner, 
+            address(this)
+        );
+    }
+
+    function changeMintState(MintState _mintState) external onlyOwner {
+        mintState = _mintState;
+    }
+
+    function addToWhitelist(address toAddAddress) external onlyOwner {
+        whitelist[toAddAddress] = true;
+    }
+
+    function removeFromWhitelist(address toRemoveAddress) external onlyOwner {
+        delete whitelist[toRemoveAddress];
+    }
+
+    // ---------------------------
+    // Interface impl
+    // ---------------------------
+
+    function _buildNftState(TvmCell code, uint256 id)
+		internal
+		pure
+		virtual
+		override (TIP4_2Collection, TIP4_3Collection)
+		returns (TvmCell)
+	{
+		return tvm.buildStateInit({contr: Nft, varInit: {_id: id}, code: code});
+	}
+}
