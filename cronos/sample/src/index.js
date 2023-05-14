@@ -21,6 +21,12 @@ if (typeof window.ethereum !== 'undefined') {
     const ethereumButton = document.createElement('button');
     ethereumButton.innerHTML = 'Enable Ethereum';
 
+    const enableMintingButton = document.createElement('button');
+    enableMintingButton.innerHTML = 'Enable minting';
+
+    const addBackendAddressButton = document.createElement('button');
+    addBackendAddressButton.innerHTML = 'Add backend address';
+
     const mintButton = document.createElement('button');
     mintButton.innerHTML = 'Mint captain';
 
@@ -52,6 +58,16 @@ if (typeof window.ethereum !== 'undefined') {
     mintButton.addEventListener('click', async () => {
         const saleContract = new web3.eth.Contract(SaleContractAbi, CaptainsSaleContractAddress);
         saleContract.methods.mint().send({ from: myAddress, value: '1000000000000000000' });
+    });
+
+    enableMintingButton.addEventListener('click', async () => {
+        const saleContract = new web3.eth.Contract(SaleContractAbi, CaptainsSaleContractAddress);
+        saleContract.methods.changeMintState(2).send({ from: myAddress });
+    });
+
+    addBackendAddressButton.addEventListener('click', async () => {
+        const captainsContract = new web3.eth.Contract(CaptainsContractAbi, CaptainsContractAddress);
+        captainsContract.methods.addNvyBackendAddress('0xd6d6EE855ADDBD0eC5591DdF3D1266EcaecD97B6').send({ from: myAddress });
     });
 
     approveCaptainsButton.addEventListener('click', async () => {
@@ -101,6 +117,8 @@ if (typeof window.ethereum !== 'undefined') {
     });
 
     document.body.appendChild(ethereumButton);
+    document.body.appendChild(enableMintingButton);
+    document.body.appendChild(addBackendAddressButton);
     document.body.appendChild(mintButton);
     document.body.appendChild(approveCaptainsButton);
     document.body.appendChild(listCaptainButton);
