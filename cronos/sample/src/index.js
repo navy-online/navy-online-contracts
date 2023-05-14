@@ -9,9 +9,9 @@ import { ethers } from "ethers";
 
 const web3 = new Web3(givenProvider);
 
-const CaptainsContractAddress = '0xA7D87Ec62772c3cB9b59de6f4ACa4c8602910bcd';
-const CaptainsSaleContractAddress = '0x1e5Dd2734C3dcB52b0166dA6FEeF9B74175cEc05';
-const CaptainsMarketplaceContractAddress = '0x7246eA171D0F1a4c88479B10790824b2622F49b6';
+const CaptainsContractAddress = '0xCefD45799326f48a4D23222Bb8Fa15b49baF28eC';
+const CaptainsSaleContractAddress = '0x802aA0B2695d0632e129F5f5b64C215Bb03FE452';
+const CaptainsMarketplaceContractAddress = '0xA7604d33932Ee1108DcD9464e10C9F98606B8D6b';
 
 let myAddress = '';
 
@@ -1299,6 +1299,24 @@ const CaptainsContractAbi = [
             }
         ],
         "name": "transferFrom",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "itemId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "string",
+                "name": "tokenURI",
+                "type": "string"
+            }
+        ],
+        "name": "updateTokenURI",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
