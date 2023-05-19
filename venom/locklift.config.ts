@@ -1,6 +1,8 @@
-import { LockliftConfig } from "locklift";
+import { lockliftChai, LockliftConfig } from "locklift";
 import { FactorySource } from "./build/factorySource";
+import chai from "chai";
 
+chai.use(lockliftChai);
 declare global {
   const locklift: import("locklift").Locklift<FactorySource>;
 }
@@ -66,8 +68,6 @@ const config: LockliftConfig = {
       },
       keys: {
         // Use everdev to generate your phrase
-        // !!! Never commit it in your repos !!!
-        // phrase: "action inject penalty envelope rabbit element slim tornado dinner pizza off blood",
         amount: 20,
       },
     },
@@ -117,6 +117,29 @@ const config: LockliftConfig = {
         // Use everdev to generate your phrase
         // !!! Never commit it in your repos !!!
         // phrase: "action inject penalty envelope rabbit element slim tornado dinner pizza off blood",
+        amount: 20,
+      },
+    },
+    venom_devnet: {
+      connection: {
+        id: 1000,
+        type: "jrpc",
+        group: "dev",
+        data: {
+          endpoint: VENOM_TESTNET_ENDPOINT,
+        },
+      },
+      giver: {
+        address: "",
+        phrase: "0",
+        accountId: 0,
+      },
+      tracing: {
+        endpoint: VENOM_TESTNET_TRACE_ENDPOINT,
+      },
+      keys: {
+        // Use everdev to generate your phrase
+        // !!! Never commit it in your repos !!!
         amount: 20,
       },
     },

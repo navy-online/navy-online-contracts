@@ -1,0 +1,183 @@
+pragma ever-solidity ^0.62.0;
+
+import "@itgold/everscale-tip/contracts/TIP4_1/interfaces/ITIP4_1NFT.sol";
+import "@itgold/everscale-tip/contracts/TIP4_1/interfaces/INftTransfer.sol";
+import '@itgold/everscale-tip/contracts/access/OwnableInternal.sol';
+
+contract Marketplace is INftTransfer, OwnableInternal {
+
+    uint8 constant sender_is_not_owner = 101;
+    uint8 constant value_is_less_than_required = 102;
+
+    uint128 public NFT_LISTED = 0;
+    uint128 public NFT_SOLD = 5;
+
+    struct NFT {
+        address nftAddress;
+        address seller;
+        address owner;
+        uint128 price;
+    }
+
+    mapping(address => NFT) public nftsListedByAddress;
+    mapping(address => NFT) public nftsForSaleByAddress;
+    mapping(address => NFT) public nftsSoldByAddress;
+
+    event NFTListed(address nftAddress, address seller);
+    event NFTDelisted(address nftAddress, address seller);
+    event NFTPriceSet(address nftAddress, address seller, uint128 price);
+    event NFTSold(address nftAddress, address seller, address newOwner, uint128 price);
+
+    address public collectionAddress;
+
+    constructor(
+         address ownerAddress,
+         address _collectionAddress
+    ) OwnableInternal(
+        ownerAddress
+    ) public {
+        tvm.accept();
+
+        collectionAddress = _collectionAddress;
+    }
+
+    // This is step 1. User need to send his NFT to the marketplace.
+    // Later he'll be able to set and change selling price, as well as cancel selling and get it back
+
+    function onNftTransfer(
+        uint256, // id,
+        address oldOwner,
+        address, // newOwner,
+        address, // oldManager,
+        address, // newManager,
+        address collection, // collection,
+        address gasReceiver,
+        TvmCell // payload
+    ) override external {
+        tvm.rawReserve(0, 4); // I have no idea what i'm actually doing 1
+
+        // Each marketplace instance accepts a specific collection nft's only
+        // Send it back if different collection
+        if(collection != collectionAddress) {
+            mapping(address => ITIP4_1NFT.CallbackParams) empty;
+            ITIP4_1NFT(msg.sender).transfer{
+                value: 0, // I have no idea what i'm actually doing 2
+                flag: 128,
+                bounce: false
+            } (
+                oldOwner,
+                gasReceiver,
+                empty
+            );
+        } else {
+            // Or accept it
+            nftsListedByAddress[msg.sender] = NFT(
+                msg.sender,
+                oldOwner,
+                address(this),
+                0
+            );
+
+            emit NFTListed(msg.sender, oldOwner);
+        }
+    }
+
+    // Return NFT back to it's owner by marketplace owner
+
+    function returnListedNftBackToTheOwner(address nftAddress, address originalOwner) external onlyOwner  {
+        require(msg.value > 0.3 ton, value_is_less_than_required);
+        require(nftsListedByAddress[nftAddress].seller == originalOwner, sender_is_not_owner);
+        tvm.rawReserve(0, 4); // I have no idea what i'm actually doing 3
+
+        mapping(address => ITIP4_1NFT.CallbackParams) empty;
+        ITIP4_1NFT(nftAddress).transfer {
+            value: 0, // I have no idea what i'm actually doing 4
+            flag: 128,
+            bounce: false
+        } (
+            originalOwner,
+            msg.sender,
+            empty
+        );
+
+        delete nftsListedByAddress[nftAddress];
+        emit NFTDelisted(nftAddress, originalOwner);
+    }
+
+    // Return NFT back to it's owner by owner
+    // Works for both listed and selling nft's
+
+    function delistNft(address nftAddress) external {
+        require(msg.value > 0.3 ton, value_is_less_than_required);
+        require(nftsListedByAddress[nftAddress].seller == msg.sender ||
+            nftsForSaleByAddress[nftAddress].seller == msg.sender, sender_is_not_owner);
+
+        tvm.rawReserve(0, 4); // I have no idea what i'm actually doing 4
+
+        mapping(address => ITIP4_1NFT.CallbackParams) noCallbacks;
+        ITIP4_1NFT(nftAddress).transfer{
+            value: 0, // I have no idea what i'm actually doing 5
+            flag: 128,
+            bounce: false
+        } (
+            msg.sender,
+            msg.sender,
+            noCallbacks
+        );
+
+        if(nftsListedByAddress[nftAddress].seller == msg.sender) {
+            delete nftsListedByAddress[nftAddress];
+        } else {
+            delete nftsForSaleByAddress[nftAddress];
+        }
+
+        emit NFTDelisted(nftAddress, msg.sender);
+    }
+
+    // Starting up NFT selling by setting up its sell price
+
+    function startNftSelling(
+        address nftAddress,
+        uint128 price
+    ) external {
+        require(price > 1 ton, value_is_less_than_required);
+        require(msg.value > 0.3 ton, value_is_less_than_required);
+        require(nftsListedByAddress[nftAddress].seller == msg.sender);
+
+        tvm.rawReserve(0, 4); // I have no idea what i'm actually doing 6
+
+        delete nftsListedByAddress[nftAddress];
+
+        nftsForSaleByAddress[nftAddress] = NFT(nftAddress, msg.sender, address(this), price);
+
+        emit NFTPriceSet(nftAddress, msg.sender, price);
+    }
+
+    function buyNft(
+        address nftAddress
+    ) external {
+        NFT nft = nftsForSaleByAddress[nftAddress];
+        require(msg.value > nft.price + 0.3 ton, value_is_less_than_required);
+
+        tvm.rawReserve(0, 4); // I have no idea what i'm actually doing 7
+
+        mapping(address => ITIP4_1NFT.CallbackParams) noCallbacks;
+        ITIP4_1NFT(nftAddress).transfer{
+            value: 0, // I have no idea what i'm actually doing 8
+            flag: 128,
+            bounce: false
+        }(
+            msg.sender,
+            msg.sender,
+            noCallbacks
+        );
+
+        nft.seller.transfer({value: nft.price, flag: 1, bounce: false}); // I have no idea what i'm actually doing 9
+
+        nftsSoldByAddress[nftAddress] = NFT(nftAddress, nft.seller, msg.sender, nft.price);
+        delete nftsForSaleByAddress[nftAddress];
+
+        emit NFTSold(nftAddress, nft.seller, msg.sender, nft.price);
+    }
+
+}
