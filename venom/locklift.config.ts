@@ -129,8 +129,7 @@ const config: LockliftConfig = {
       },
       giver: {
         address: "",
-        phrase: "0",
-        accountId: 0,
+        key: "",
       },
       tracing: {
         endpoint: VENOM_TESTNET_TRACE_ENDPOINT,

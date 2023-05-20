@@ -66,8 +66,6 @@ export class VenomIntegration {
         });
 
         Logger.log('Venom client initialized...');
-
-        await this.generateNft(1, '{ownerAddress}', '0:d3d74c409a8961c335d2111e1f64c7daa0dd40835aab5e0b500de91b4be8083e');
     }
 
     private async generateNft(id: number, json: string, minter: string) {
