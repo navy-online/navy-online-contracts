@@ -1,6 +1,4 @@
 pragma ever-solidity ^0.62.0;
-// pragma ton-solidity >= 0.58.0;
-// pragma ton-solidity ^0.58.1; 
 
 import '@itgold/everscale-tip/contracts/TIP4_1/TIP4_1Nft.sol';
 import '@itgold/everscale-tip/contracts/TIP4_2/TIP4_2Nft.sol';
