@@ -20,17 +20,14 @@ contract Marketplace is ReentrancyGuard {
     struct NFT {
         address nftContract;
         uint256 tokenId;
-        string tokenUri;
         address seller;
         address owner;
         uint256 price;
-        uint lastUpdated;
     }
 
     event NFTListed(
         address nftContract,
         uint256 tokenId,
-        string tokenUri,
         address seller,
         address owner,
         uint256 price
@@ -63,17 +60,12 @@ contract Marketplace is ReentrancyGuard {
             _tokenId
         );
 
-        string memory tokenUri = ERC721URIStorage(_nftContract).tokenURI(
-            _tokenId
-        );
-
         _nftsListedCount.increment();
 
         _nftsListedIndexByTokenId[_tokenId] = _nftsListedCount.current();
         _nftsListedByIndex[_nftsListedCount.current()] = NFT(
             _nftContract,
             _tokenId,
-            tokenUri,
             msg.sender,
             address(this),
             _price,
@@ -83,7 +75,6 @@ contract Marketplace is ReentrancyGuard {
         emit NFTListed(
             _nftContract,
             _tokenId,
-            tokenUri,
             msg.sender,
             address(this),
             _price
@@ -131,7 +122,6 @@ contract Marketplace is ReentrancyGuard {
 
         IERC721(_nftContract).transferFrom(address(this), buyer, nft.tokenId);
         nft.owner = buyer;
-        nft.lastUpdated = block.timestamp;
 
         _nftsSoldCount.increment();
         _nftsSoldByIndex[_nftsSoldCount.current()] = nft;
