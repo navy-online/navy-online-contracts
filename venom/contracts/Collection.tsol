@@ -93,7 +93,7 @@ contract Collection is TIP4_2Collection, TIP4_3Collection, OwnableInternal {
     function generateNft(
         uint256 id, 
         string json, 
-        address minter
+        address owner
     ) external onlyOwner {
         require(collectionSize > _totalSupply, maximum_supply_reached);
         tvm.rawReserve(0, 4);
@@ -106,7 +106,7 @@ contract Collection is TIP4_2Collection, TIP4_3Collection, OwnableInternal {
             value: 0,
             flag: 128
         }(
-            minter,
+            owner,
             msg.sender,
             0.3 ton,
             json,
@@ -117,7 +117,7 @@ contract Collection is TIP4_2Collection, TIP4_3Collection, OwnableInternal {
 
         emit NftGenerated(
             id, 
-            minter
+            owner
         );
     }
 

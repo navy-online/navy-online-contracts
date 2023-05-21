@@ -10,11 +10,10 @@ import "./IToken.sol";
 import "./GameLibrary.sol";
 
 abstract contract UpgradableEntity is ERC721URIStorage, AccessControl {
-    // To keep track of token id's
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
-    event GrantEntity(address owner, uint256 tokenId);
+    event NftGenerated(uint256 id, address owner);
 
     function totalSupply() public view returns (uint256) {
         return _tokenIds.current();
@@ -24,26 +23,21 @@ abstract contract UpgradableEntity is ERC721URIStorage, AccessControl {
         _requireMinted(tokenId);
     }
 
-    function grantNFT(
-        address player,
-        string memory tokenURI
-    ) public onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256) {
+    function generateNft(
+        uint256 id,
+        string memory tokenURI,
+        address owner
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _tokenIds.increment();
-
-        uint256 newItemId = _tokenIds.current();
-
-        _mint(player, newItemId);
-
-        _setTokenURI(newItemId, tokenURI);
-
-        return newItemId;
+        _mint(player, id);
+        _setTokenURI(id, tokenURI);
     }
 
     function updateTokenURI(
-        uint256 itemId,
+        uint256 id,
         string memory tokenURI
     ) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setTokenURI(itemId, tokenURI);
+        _setTokenURI(id, tokenURI);
     }
 
     // ---------------------------------------

@@ -3,7 +3,11 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract CollectionSale is Ownable {
+contract Collection is Ownable {
+    // To keep track of token id's
+    using Counters for Counters.Counter;
+    Counters.Counter private _tokenIds;
+
     // ---------------------------------------
     // Minting
     // ---------------------------------------
@@ -15,22 +19,14 @@ contract CollectionSale is Ownable {
     }
     MintState public mintState = MintState.DISABLED; // 0, 1, 2
 
-    uint256 public tokensTotal;
-    uint256 public tokensLeft;
+    uint256 public collectionSize;
     uint256 public mintPrice;
-    address public contractAddress;
 
-    event GenerateToken(address owner, address contractAddress);
+    event NftMinted(uint256 id, address owner);
 
-    constructor(
-        uint256 _tokensTotal,
-        uint256 _mintPrice,
-        address _contractAddress
-    ) {
-        tokensTotal = _tokensTotal;
-        tokensLeft = _tokensTotal;
+    constructor(uint256 _mintPrice, uint256 _collectionSize) {
         mintPrice = _mintPrice;
-        contractAddress = _contractAddress;
+        collectionSize = _collectionSize;
     }
 
     function changeMintState(MintState _mintState) external onlyOwner {
@@ -69,14 +65,19 @@ contract CollectionSale is Ownable {
 
     // ---------------------------------------
 
-    function mint() external payable {
+    function mintNft() external payable {
         require(msg.value == mintPrice, "Wrong mint price");
         require(mintState != MintState.DISABLED, "Mint is disabled for now");
-        require(tokensLeft > 0, "No more tokens for sale");
+        require(
+            collectionSize > _tokenIds.current(),
+            "No more tokens for sale"
+        );
         if (mintState == MintState.WHITELIST) {
             require(whitelist[msg.sender], "You need to be whitelisted");
         }
-        tokensLeft -= 1;
-        emit GenerateToken(msg.sender, contractAddress);
+
+        _tokenIds.increment();
+
+        emit NftMinted(_tokenIds.current(), msg.sender);
     }
 }
