@@ -9,9 +9,6 @@ contract Marketplace is INftTransfer, OwnableInternal {
     uint8 constant sender_is_not_owner = 101;
     uint8 constant value_is_less_than_required = 102;
 
-    uint128 public NFT_LISTED = 0;
-    uint128 public NFT_SOLD = 5;
-
     struct NFT {
         address nftAddress;
         address seller;
@@ -23,10 +20,10 @@ contract Marketplace is INftTransfer, OwnableInternal {
     mapping(address => NFT) public nftsForSaleByAddress;
     mapping(address => NFT) public nftsSoldByAddress;
 
-    event NFTListed(address nftAddress, address seller);
-    event NFTDelisted(address nftAddress, address seller);
-    event NFTPriceSet(address nftAddress, address seller, uint128 price);
-    event NFTSold(address nftAddress, address seller, address newOwner, uint128 price);
+    event NftListed(address nftAddress, address seller);
+    event NftDelisted(address nftAddress, address seller);
+    event NftSalePriceSet(address nftAddress, address seller, uint128 price);
+    event NftSold(address nftAddress, address seller, address newOwner, uint128 price);
 
     address public collectionAddress;
 
@@ -78,30 +75,8 @@ contract Marketplace is INftTransfer, OwnableInternal {
                 0
             );
 
-            emit NFTListed(msg.sender, oldOwner);
+            emit NftListed(msg.sender, oldOwner);
         }
-    }
-
-    // Return NFT back to it's owner by marketplace owner
-
-    function returnListedNftBackToTheOwner(address nftAddress, address originalOwner) external onlyOwner  {
-        require(msg.value > 0.3 ton, value_is_less_than_required);
-        require(nftsListedByAddress[nftAddress].seller == originalOwner, sender_is_not_owner);
-        tvm.rawReserve(0, 4); // I have no idea what i'm actually doing 3
-
-        mapping(address => ITIP4_1NFT.CallbackParams) empty;
-        ITIP4_1NFT(nftAddress).transfer {
-            value: 0, // I have no idea what i'm actually doing 4
-            flag: 128,
-            bounce: false
-        } (
-            originalOwner,
-            msg.sender,
-            empty
-        );
-
-        delete nftsListedByAddress[nftAddress];
-        emit NFTDelisted(nftAddress, originalOwner);
     }
 
     // Return NFT back to it's owner by owner
@@ -131,12 +106,12 @@ contract Marketplace is INftTransfer, OwnableInternal {
             delete nftsForSaleByAddress[nftAddress];
         }
 
-        emit NFTDelisted(nftAddress, msg.sender);
+        emit NftDelisted(nftAddress, msg.sender);
     }
 
     // Starting up NFT selling by setting up its sell price
 
-    function startNftSelling(
+    function setNftSalePrice(
         address nftAddress,
         uint128 price
     ) external {
@@ -150,7 +125,7 @@ contract Marketplace is INftTransfer, OwnableInternal {
 
         nftsForSaleByAddress[nftAddress] = NFT(nftAddress, msg.sender, address(this), price);
 
-        emit NFTPriceSet(nftAddress, msg.sender, price);
+        emit NftSalePriceSet(nftAddress, msg.sender, price);
     }
 
     function buyNft(
@@ -177,7 +152,7 @@ contract Marketplace is INftTransfer, OwnableInternal {
         nftsSoldByAddress[nftAddress] = NFT(nftAddress, nft.seller, msg.sender, nft.price);
         delete nftsForSaleByAddress[nftAddress];
 
-        emit NFTSold(nftAddress, nft.seller, msg.sender, nft.price);
+        emit NftSold(nftAddress, nft.seller, msg.sender, nft.price);
     }
 
 }

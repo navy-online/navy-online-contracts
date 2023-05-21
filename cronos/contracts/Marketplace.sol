@@ -3,114 +3,95 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Marketplace is ReentrancyGuard {
     using Counters for Counters.Counter;
     Counters.Counter private _nftsListedCount;
     Counters.Counter private _nftsSoldCount;
+
     address payable private _marketOwner;
+    address public collectionAddress;
     uint256 public MARKETPLACE_ROYALTY_PERCENTAGE = 5;
 
     mapping(uint256 => NFT) private _nftsListedByIndex;
-    mapping(uint256 => uint256) private _nftsListedIndexByTokenId;
+    mapping(uint256 => uint256) private _nftsListedIndexById;
     mapping(uint256 => NFT) private _nftsSoldByIndex;
 
     struct NFT {
-        address nftContract;
-        uint256 tokenId;
+        uint256 id;
         address seller;
         address owner;
         uint256 price;
     }
 
     event NFTListed(
-        address nftContract,
-        uint256 tokenId,
+        uint256 nftId,
         address seller,
         address owner,
         uint256 price
     );
+    event NFTDelisted(uint256 nftId, address seller);
+    event NFTSold(uint256 nftId, address seller, address owner, uint256 price);
 
-    event NFTDelisted(uint256 tokenId, address nftContract, address seller);
-
-    event NFTSold(
-        address nftContract,
-        uint256 tokenId,
-        address seller,
-        address owner,
-        uint256 price
-    );
-
-    constructor() {
+    constructor(address _collectionAddress) {
+        collectionAddress = _collectionAddress;
         _marketOwner = payable(msg.sender);
     }
 
     function listNft(
         address _nftContract,
-        uint256 _tokenId,
+        uint256 _nftId,
         uint256 _price
     ) public nonReentrant {
+        require(_nftContract == collectionAddress, "Unsupported collection");
         require(_price > 0, "Price must be at least 1 wei");
 
-        ERC721URIStorage(_nftContract).transferFrom(
-            msg.sender,
-            address(this),
-            _tokenId
-        );
+        // TODO make sure that ERC721 transfer is checking the ownership
+        ERC721(_nftContract).transferFrom(msg.sender, address(this), _nftId);
 
         _nftsListedCount.increment();
 
-        _nftsListedIndexByTokenId[_tokenId] = _nftsListedCount.current();
+        _nftsListedIndexById[_nftId] = _nftsListedCount.current();
         _nftsListedByIndex[_nftsListedCount.current()] = NFT(
-            _nftContract,
-            _tokenId,
+            _nftId,
             msg.sender,
             address(this),
             _price,
             block.timestamp
         );
 
-        emit NFTListed(
-            _nftContract,
-            _tokenId,
-            msg.sender,
-            address(this),
-            _price
-        );
+        emit NFTListed(_nftId, msg.sender, address(this), _price);
     }
 
-    function delistNft(uint256 _tokenId) public nonReentrant {
-        uint256 nftIndex = _nftsListedIndexByTokenId[_tokenId];
+    function delistNft(uint256 _nftId) public nonReentrant {
+        uint256 nftIndex = _nftsListedIndexById[_nftId];
         NFT storage nft = _nftsListedByIndex[nftIndex];
 
         require(nft.seller == msg.sender, "Only seller is able to delist");
 
-        ERC721URIStorage(nft.nftContract).transferFrom(
-            nft.owner,
-            nft.seller,
-            _tokenId
-        );
+        IERC721(nft.nftContract).transferFrom(nft.owner, nft.seller, _nftId);
 
         _nftsListedCount.decrement();
         delete _nftsListedByIndex[nftIndex];
-        delete _nftsListedIndexByTokenId[_tokenId];
+        delete _nftsListedIndexById[_nftId];
 
-        emit NFTDelisted(_tokenId, nft.nftContract, msg.sender);
+        emit NFTDelisted(_nftId, msg.sender);
     }
 
     function buyNft(
         address _nftContract,
-        uint256 _tokenId
+        uint256 _nftId
     ) public payable nonReentrant {
-        uint256 nftIndex = _nftsListedIndexByTokenId[_tokenId];
+        uint256 nftIndex = _nftsListedIndexById[_nftId];
         NFT storage nft = _nftsListedByIndex[nftIndex];
 
         require(
             msg.value >= nft.price,
             "Not enough ether to cover asking price"
         );
+
+        IERC721(_nftContract).transferFrom(address(this), buyer, nft.id);
 
         address buyer = msg.sender;
         uint256 marketplaceShare = (nft.price / 100) *
@@ -120,17 +101,16 @@ contract Marketplace is ReentrancyGuard {
         payable(nft.seller).transfer(sellerShare);
         _marketOwner.transfer(marketplaceShare);
 
-        IERC721(_nftContract).transferFrom(address(this), buyer, nft.tokenId);
         nft.owner = buyer;
 
         _nftsSoldCount.increment();
         _nftsSoldByIndex[_nftsSoldCount.current()] = nft;
 
-        emit NFTSold(_nftContract, nft.tokenId, nft.seller, buyer, msg.value);
+        emit NFTSold(nft.id, nft.seller, buyer, msg.value);
 
-        uint256 nftListedIndex = _nftsListedIndexByTokenId[_tokenId];
+        uint256 nftListedIndex = _nftsListedIndexById[_nftId];
         delete _nftsListedByIndex[nftListedIndex];
-        delete _nftsListedIndexByTokenId[_tokenId];
+        delete _nftsListedIndexById[_nftId];
         _nftsListedCount.decrement();
     }
 
