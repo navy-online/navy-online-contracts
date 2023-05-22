@@ -7,12 +7,4 @@ contract Captain is UpgradableEntity {
     constructor() public ERC721("CPT", "NVYCPT") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
-
-    function grantCaptain(
-        address player,
-        string memory tokenURI
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        uint256 tokenId = grantNFT(player, tokenURI);
-        emit GrantEntity(player, tokenId);
-    }
 }

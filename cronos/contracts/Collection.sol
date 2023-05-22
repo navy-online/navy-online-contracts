@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract Collection is Ownable {
     // To keep track of token id's
@@ -64,6 +65,10 @@ contract Collection is Ownable {
     }
 
     // ---------------------------------------
+
+    function tokensLeft() public view returns (uint256) {
+        return collectionSize - _tokenIds.current();
+    }
 
     function mintNft() external payable {
         require(msg.value == mintPrice, "Wrong mint price");
