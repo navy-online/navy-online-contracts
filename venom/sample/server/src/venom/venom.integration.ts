@@ -6,15 +6,21 @@ import {
     SimpleAccountsStorage,
     SimpleKeystore
 } from "everscale-standalone-client/nodejs";
-
 import { CollectionContractArtifact } from "src/artifacts/CollectionContract";
+import { MarketplaceContractArtifact } from "src/artifacts/MarketplaceContract";
 import { Logger } from "@nestjs/common/services";
 
 export class VenomIntegration {
 
     private collectionContract: Contract<typeof CollectionContractArtifact.ABI>;
-    private readonly COLLECTION_EVENT_NFT_MINTED = 'NftMinted';
-    private readonly COLLECTION_EVENT_NFT_GENERATED = 'NftGenerated';
+    private marketplaceContract: Contract<typeof MarketplaceContractArtifact.ABI>;
+
+    public static readonly EventNftMinted = 'NftMinted';
+    public static readonly EventNftGenerated = 'NftGenerated';
+    public static readonly EventNftListed = 'NftListed';
+    public static readonly EventNftDelisted = 'NftDelisted';
+    public static readonly EventNftSold = 'NftSold';
+    public static readonly EventNftSalePriceSet = 'NftSalePriceSet';
 
     private readonly accountStorage = new SimpleAccountsStorage();
     private readonly keyStore = new SimpleKeystore();
@@ -43,7 +49,9 @@ export class VenomIntegration {
 
         const publicKey = this.configService.get<string>('OWNER_PUBLIC_KEY');
         const secretKey = this.configService.get<string>('OWNER_SECRET_KEY');
+
         const collectionContractAddress = this.configService.get<string>('COLLECTION_CONTRACT_ADDRESS');
+        const marketplaceContractAddress = this.configService.get<string>('MARKETPLACE_CONTRACT_ADDRESS');
 
         this.ownerAccount = await EverWalletAccount.fromPubkey({ publicKey, workchain: 0 });
         this.accountStorage.addAccount(this.ownerAccount);
@@ -55,13 +63,32 @@ export class VenomIntegration {
 
         // Initialize contracts and setup event listeners
         this.collectionContract = new this.provider.Contract(CollectionContractArtifact.ABI, new Address(collectionContractAddress));
+        this.marketplaceContract = new this.provider.Contract(MarketplaceContractArtifact.ABI, new Address(marketplaceContractAddress));
 
-        const contractEvents = this.collectionContract.events(new this.provider.Subscriber());
-        contractEvents.on(async (contractEvent) => {
-            if (contractEvent.event == this.COLLECTION_EVENT_NFT_MINTED) {
+        const collectionContractEvents = this.collectionContract.events(new this.provider.Subscriber());
+        collectionContractEvents.on(async (contractEvent) => {
+            if (contractEvent.event == VenomIntegration.EventNftMinted) {
                 await this.processNftMintedEvent(contractEvent);
-            } else if (contractEvent.event == this.COLLECTION_EVENT_NFT_GENERATED) {
+            } else if (contractEvent.event == VenomIntegration.EventNftGenerated) {
                 await this.processNftGeneratedEvent(contractEvent);
+            }
+        });
+
+        const marketplaceContractEvents = this.marketplaceContract.events(new this.provider.Subscriber());
+        marketplaceContractEvents.on(async (contractEvent) => {
+            switch (contractEvent.event) {
+                case VenomIntegration.EventNftListed:
+                    await this.processNftListedEvent(contractEvent);
+                    break;
+                case VenomIntegration.EventNftDelisted:
+                    await this.processNftDelistedEvent(contractEvent);
+                    break;
+                case VenomIntegration.EventNftSalePriceSet:
+                    await this.processNftSalePriceSetEvent(contractEvent);
+                    break;
+                case VenomIntegration.EventNftSold:
+                    await this.processNftSoldEvent(contractEvent);
+                    break;
             }
         });
 
@@ -83,20 +110,61 @@ export class VenomIntegration {
     private async processNftMintedEvent(contractEvent: any) {
         Logger.log('Got NFT minted event, processing...');
         if (this.checkEventEmitted(contractEvent)) {
+            Logger.log('Minted params: ', contractEvent.data);
             await this.generateNft(contractEvent.data.id, '{dummy json}', contractEvent.data.owner);
-            Logger.log('Minted nft event processed !');
+            Logger.log('NFT minted event processed !');
         } else {
-            Logger.error('Failed to process minted nft event!');
+            Logger.error('Failed to process NFT minted event!');
         }
     }
 
     private async processNftGeneratedEvent(contractEvent: any) {
         Logger.log('Got NFT generated event, processing...');
         if (this.checkEventEmitted(contractEvent)) {
-            // TODO do something
+            Logger.log('Generated params: ', contractEvent.data);
             Logger.log('NFT generated event processed !');
         } else {
-            Logger.error('Failed to process generated nft event!');
+            Logger.error('Failed to process NFT generated event!');
+        }
+    }
+
+    private async processNftListedEvent(contractEvent: any) {
+        Logger.log('Got NFT listed event, processing...');
+        if (this.checkEventEmitted(contractEvent)) {
+            Logger.log('Listed params: ', contractEvent.data);
+            Logger.log('NFT listed event processed !');
+        } else {
+            Logger.error('Failed to process NFT listed event!');
+        }
+    }
+
+    private async processNftDelistedEvent(contractEvent: any) {
+        Logger.log('Got NFT delisted event, processing...');
+        if (this.checkEventEmitted(contractEvent)) {
+            Logger.log('Delisted params: ', contractEvent.data);
+            Logger.log('NFT delisted event processed !');
+        } else {
+            Logger.error('Failed to process NFT delisted event!');
+        }
+    }
+
+    private async processNftSalePriceSetEvent(contractEvent: any) {
+        Logger.log('Got NFT sale price set event, processing...');
+        if (this.checkEventEmitted(contractEvent)) {
+            Logger.log('Sold params: ', contractEvent.data);
+            Logger.log('NFT sold event processed !');
+        } else {
+            Logger.error('Failed to process NFT sold event!');
+        }
+    }
+
+    private async processNftSoldEvent(contractEvent: any) {
+        Logger.log('Got NFT sold event, processing...');
+        if (this.checkEventEmitted(contractEvent)) {
+            Logger.log('Sold params: ', contractEvent.data);
+            Logger.log('NFT sold event processed !');
+        } else {
+            Logger.error('Failed to process NFT sold event!');
         }
     }
 
