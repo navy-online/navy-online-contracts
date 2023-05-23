@@ -44,10 +44,10 @@ describe("Deploy captains and mint", function () {
     describe("Deployment", function () {
         it("Tokens for sale amount should be equal to " + initialCollectionSupply, async function () {
             const { collectionContract } = await loadFixture(deployCaptainsContractsFixture);
-            const collectionSize = await collectionContract.collectionSize();
-            const tokensLeft = await collectionContract.tokensLeft();
-            expect(collectionSize).to.equal(initialCollectionSupply);
-            expect(tokensLeft).to.equal(initialCollectionSupply);
+            const totalSupply = await collectionContract.totalSupply();
+            const currentSupply = await collectionContract.currentSupply();
+            expect(totalSupply).to.equal(initialCollectionSupply);
+            expect(currentSupply).to.equal(0);
         });
 
         it("Minting state should be disabled by default ", async function () {
@@ -86,7 +86,7 @@ describe("Deploy captains and mint", function () {
             await expect(collectionContract.connect(firstAccount).mintNft({ value: mintPrice }))
                 .to.emit(collectionContract, "NftMinted")
                 .withArgs(1, firstAccount.address);
-            expect(await collectionContract.tokensLeft()).to.equal(initialCollectionSupply - 1);
+            expect(await collectionContract.currentSupply()).to.equal(1);
 
             await expect(captainContract.generateNft(1, "https://some.url", firstAccount.address))
                 .to.emit(captainContract, "NftGenerated")

@@ -20,14 +20,14 @@ contract Collection is Ownable {
     }
     MintState public mintState = MintState.DISABLED; // 0, 1, 2
 
-    uint256 public collectionSize;
+    uint256 public totalSupply;
     uint256 public mintPrice;
 
     event NftMinted(uint256 id, address owner);
 
-    constructor(uint256 _mintPrice, uint256 _collectionSize) {
+    constructor(uint256 _mintPrice, uint256 _totalSupply) {
         mintPrice = _mintPrice;
-        collectionSize = _collectionSize;
+        totalSupply = _totalSupply;
     }
 
     function changeMintState(MintState _mintState) external onlyOwner {
@@ -66,17 +66,14 @@ contract Collection is Ownable {
 
     // ---------------------------------------
 
-    function tokensLeft() public view returns (uint256) {
-        return collectionSize - _tokenIds.current();
+    function currentSupply() public view returns (uint256) {
+        return _tokenIds.current();
     }
 
     function mintNft() external payable {
         require(msg.value == mintPrice, "Wrong mint price");
         require(mintState != MintState.DISABLED, "Mint is disabled for now");
-        require(
-            collectionSize > _tokenIds.current(),
-            "No more tokens for sale"
-        );
+        require(totalSupply > _tokenIds.current(), "No more tokens for sale");
         if (mintState == MintState.WHITELIST) {
             require(whitelist[msg.sender], "You need to be whitelisted");
         }
