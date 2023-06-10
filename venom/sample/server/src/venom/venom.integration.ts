@@ -49,7 +49,6 @@ export class VenomIntegration {
 
         const publicKey = this.configService.get<string>('OWNER_PUBLIC_KEY');
         const secretKey = this.configService.get<string>('OWNER_SECRET_KEY');
-
         const collectionContractAddress = this.configService.get<string>('COLLECTION_CONTRACT_ADDRESS');
         const marketplaceContractAddress = this.configService.get<string>('MARKETPLACE_CONTRACT_ADDRESS');
 

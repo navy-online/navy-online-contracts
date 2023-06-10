@@ -1,4 +1,4 @@
-pragma ever-solidity ^0.62.0;
+pragma ever-solidity ^0.61.2;
 
 import "@itgold/everscale-tip/contracts/TIP4_1/interfaces/ITIP4_1NFT.sol";
 import "@itgold/everscale-tip/contracts/TIP4_1/interfaces/INftTransfer.sol";
