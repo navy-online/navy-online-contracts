@@ -1,5 +1,5 @@
 import { Address, ProviderRpcClient } from "everscale-inpage-provider";
-import { EverscaleStandaloneClient, } from "everscale-standalone-client";
+import { EverscaleStandaloneClient, EverWalletAccount, } from "everscale-standalone-client";
 import { useEffect, useState } from "react";
 
 import { VenomConnect } from "venom-connect";
@@ -178,15 +178,9 @@ const App = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [venomConnect]);
 
-
-  // let collectionContract: any;
-  // let marketplaceContract: any;
-
   const onGetCollectionInfoCall = async () => {
     if (venomProvider) {
       const collectionContract = new venomProvider.Contract(collectionContractAbi, collectionContractAddress);
-
-      setStandaloneMethodsIsFetching(true);
 
       const collectionTotalSupply: any = await collectionContract.methods.totalSupply({ answerId: 0 } as never).call();
       const collectionSize: any = await collectionContract.methods.collectionSize({} as never).call();
@@ -271,6 +265,21 @@ const App = () => {
       const marketplaceContract = new venomProvider.Contract(marketplaceContractAbi, marketplaceContractAddress);
       await marketplaceContract.methods.buyNft({ nftAddress: nft.nftAddress } as never)
         .send({ from: address, amount: '1500000000' });
+    } else {
+      alert("Provider is not available now");
+    }
+  };
+
+  const onSignAuthDataCall = async () => {
+    if (venomProvider) {
+      const providerState = await venomProvider.getProviderState();
+
+      const signature = await venomProvider.signData({
+        data: btoa(`Hello world from ${providerState.permissions.accountInteraction.address.toString()}`),
+        publicKey: providerState.permissions.accountInteraction.publicKey
+      });
+
+      alert(JSON.stringify(signature, null, 2));
     } else {
       alert("Provider is not available now");
     }
@@ -402,6 +411,13 @@ const App = () => {
                   {venomConnect && (
                     <Button variant="contained" onClick={onBuyNftCall}>
                       Buy NFT on the marketplace
+                    </Button>
+                  )}
+                </Grid>
+                <Grid item>
+                  {venomConnect && (
+                    <Button variant="contained" onClick={onSignAuthDataCall}>
+                      Sign auth data
                     </Button>
                   )}
                 </Grid>
